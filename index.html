@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ripley Labs — Something Big Is Coming</title>
+<meta name="description" content="Ripley Labs is building the future of AI agent infrastructure. We're in the lab. Stay tuned.">
+<meta property="og:title" content="Ripley Labs — In The Lab">
+<meta property="og:description" content="We're building something big. The future of AI agent memory.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ripleylabs.ai">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #06080c;
+    --bg-panel: #0b0f16;
+    --accent-cyan: #00e5ff;
+    --accent-amber: #ffab00;
+    --text-primary: #e8ecf1;
+    --text-muted: #6b7a8d;
+    --text-dim: #3a4858;
+    --border: #1a2233;
+    --glow-cyan: rgba(0, 229, 255, 0.15);
+    --glow-amber: rgba(255, 171, 0, 0.12);
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'Outfit', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background: var(--bg-deep);
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background: var(--bg-deep);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── Scanline overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 229, 255, 0.008) 2px,
+      rgba(0, 229, 255, 0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Noise texture ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ── Ambient glow blobs ── */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb--cyan {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,255,0.07), transparent 70%);
+    top: -150px; left: -100px;
+    animation: float-slow 20s ease-in-out infinite;
+  }
+  .glow-orb--amber {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,171,0,0.05), transparent 70%);
+    bottom: -100px; right: -80px;
+    animation: float-slow 25s ease-in-out infinite reverse;
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(30px, -20px); }
+    66% { transform: translate(-20px, 15px); }
+  }
+
+  /* ── Grid background ── */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 80px 80px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 70%);
+  }
+
+  /* ── Layout ── */
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    animation: fade-down 0.8s ease-out 0.2s forwards;
+  }
+
+  .topbar__logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .topbar__icon {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--accent-cyan);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 20px var(--glow-cyan), inset 0 0 12px var(--glow-cyan);
+  }
+  .topbar__icon::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent-cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-cyan);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .topbar__name {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+  .topbar__name span {
+    color: var(--accent-cyan);
+  }
+
+  .topbar__status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent-amber);
+  }
+  .topbar__status-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent-amber);
+    border-radius: 50%;
+    animation: blink 1.5s step-end infinite;
+    box-shadow: 0 0 8px var(--accent-amber);
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 8rem 0 4rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero__tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.5s forwards;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 100px;
+    background: rgba(0, 229, 255, 0.04);
+  }
+  .hero__tag::before {
+    content: '◈';
+    font-size: 0.6rem;
+  }
+
+  .hero__headline {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.7s forwards;
+  }
+  .hero__headline em {
+    font-style: normal;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 40px var(--glow-cyan);
+    position: relative;
+  }
+
+  .hero__sub {
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    max-width: 540px;
+    margin: 0 auto 3.5rem;
+    line-height: 1.7;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.9s forwards;
+  }
+
+  /* ── Terminal block ── */
+  .terminal {
+    max-width: 620px;
+    margin: 0 auto 6rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 1.1s forwards;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px var(--glow-cyan);
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+  .terminal__dot:nth-child(1) { background: #ff5f57; }
+  .terminal__dot:nth-child(2) { background: #ffbd2e; }
+  .terminal__dot:nth-child(3) { background: #28ca41; }
+
+  .terminal__body {
+    padding: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 2;
+    color: var(--text-muted);
+  }
+
+  .terminal__line {
+    opacity: 0;
+    animation: type-in 0.4s ease-out forwards;
+  }
+  .terminal__line:nth-child(1) { animation-delay: 1.6s; }
+  .terminal__line:nth-child(2) { animation-delay: 2.0s; }
+  .terminal__line:nth-child(3) { animation-delay: 2.4s; }
+  .terminal__line:nth-child(4) { animation-delay: 2.8s; }
+  .terminal__line:nth-child(5) { animation-delay: 3.2s; }
+
+  @keyframes type-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .terminal__prompt { color: var(--accent-cyan); }
+  .terminal__ok { color: #28ca41; }
+  .terminal__warn { color: var(--accent-amber); }
+  .terminal__highlight { color: var(--text-primary); }
+
+  .terminal__cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background: var(--accent-cyan);
+    vertical-align: text-bottom;
+    animation: cursor-blink 1s step-end infinite;
+    margin-left: 2px;
+    opacity: 0;
+    animation: cursor-appear 0.1s ease-out 3.6s forwards, cursor-blink 1s step-end 3.6s infinite;
+  }
+
+  @keyframes cursor-appear { to { opacity: 1; } }
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── Info cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 6rem;
+  }
+
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: fade-up 0.6s ease-out forwards;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover {
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow: 0 0 30px var(--glow-cyan);
+  }
+  .card:nth-child(1) { animation-delay: 1.4s; }
+  .card:nth-child(2) { animation-delay: 1.6s; }
+  .card:nth-child(3) { animation-delay: 1.8s; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card__icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .card__title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent-cyan);
+    margin-bottom: 0.75rem;
+  }
+
+  .card__text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  /* ── CTA / Email ── */
+  .cta {
+    text-align: center;
+    padding: 4rem 0 2rem;
+    border-top: 1px solid var(--border);
+    margin-bottom: 4rem;
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 2.2s forwards;
+  }
+
+  .cta__heading {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+  }
+
+  .cta__form {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    max-width: 460px;
+    margin: 0 auto 1.5rem;
+  }
+
+  .cta__input {
+    flex: 1;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .cta__input::placeholder { color: var(--text-dim); }
+  .cta__input:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px var(--glow-cyan);
+  }
+
+  .cta__btn {
+    padding: 0.85rem 1.75rem;
+    background: var(--accent-cyan);
+    color: var(--bg-deep);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  .cta__btn:hover {
+    background: #fff;
+    box-shadow: 0 0 30px var(--glow-cyan);
+    transform: translateY(-1px);
+  }
+
+  .cta__note {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 2rem 0 3rem;
+    border-top: 1px solid var(--border);
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 2.4s forwards;
+  }
+
+  .footer__text {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .footer__links {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+  }
+  .footer__link {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s ease;
+  }
+  .footer__link:hover { color: var(--accent-cyan); }
+
+  /* ── Animations ── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-down {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .cards { grid-template-columns: 1fr; }
+    .hero { padding: 5rem 0 3rem; }
+    .cta__form { flex-direction: column; }
+    .cta__btn { width: 100%; }
+  }
+
+  @media (max-width: 480px) {
+    .topbar { flex-direction: column; gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb glow-orb--cyan"></div>
+<div class="glow-orb glow-orb--amber"></div>
+<div class="grid-bg"></div>
+
+<div class="container">
+
+  <!-- Top Bar -->
+  <nav class="topbar">
+    <div class="topbar__logo">
+      <div class="topbar__icon"></div>
+      <div class="topbar__name">Ripley<span>Labs</span>.ai</div>
+    </div>
+    <div class="topbar__status">
+      <div class="topbar__status-dot"></div>
+      Lab Status: Active
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__tag">Stealth Mode</div>
+    <h1 class="hero__headline">
+      We're in<br>the <em>Lab</em>.
+    </h1>
+    <p class="hero__sub">
+      Ripley Labs is building foundational infrastructure for the next generation of AI. Something big is taking shape. Stay close.
+    </p>
+  </section>
+
+  <!-- Terminal -->
+  <div class="terminal">
+    <div class="terminal__bar">
+      <div class="terminal__dot"></div>
+      <div class="terminal__dot"></div>
+      <div class="terminal__dot"></div>
+    </div>
+    <div class="terminal__body">
+      <div class="terminal__line"><span class="terminal__prompt">$</span> <span class="terminal__highlight">ripley init</span> --mode stealth</div>
+      <div class="terminal__line"><span class="terminal__ok">✓</span> Core systems initialized</div>
+      <div class="terminal__line"><span class="terminal__ok">✓</span> Infrastructure layer operational</div>
+      <div class="terminal__line"><span class="terminal__warn">⧖</span> Building something extraordinary...</div>
+      <div class="terminal__line"><span class="terminal__prompt">$</span> <span class="terminal__cursor"></span></div>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards">
+    <div class="card">
+      <span class="card__icon">⬡</span>
+      <div class="card__title">Infrastructure</div>
+      <p class="card__text">We're solving a foundational problem in AI that's been holding the entire industry back from production.</p>
+    </div>
+    <div class="card">
+      <span class="card__icon">◇</span>
+      <div class="card__title">Deep Expertise</div>
+      <p class="card__text">Our team brings decades of experience building data platforms at scale — from the ground up.</p>
+    </div>
+    <div class="card">
+      <span class="card__icon">△</span>
+      <div class="card__title">Coming Soon</div>
+      <p class="card__text">We're not ready to share everything yet. But when we do, you'll want to be on the list.</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <div class="cta__heading">Get notified when we emerge from the lab</div>
+    <div class="cta__form">
+      <input type="email" class="cta__input" placeholder="your@email.com" aria-label="Email address">
+      <button class="cta__btn" onclick="handleSignup()">Notify Me</button>
+    </div>
+    <p class="cta__note">No spam. Just a signal when it's time.</p>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer__text">© 2026 Ripley Labs. All rights reserved.</p>
+    <div class="footer__links">
+      <a href="https://www.linkedin.com/company/ripley-labs/" class="footer__link" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="mailto:hello@ripleylabs.ai" class="footer__link">Contact</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+function handleSignup() {
+  const input = document.querySelector('.cta__input');
+  const btn = document.querySelector('.cta__btn');
+  const email = input.value.trim();
+
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = '#ff5f57';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+
+  // Submit to Mailchimp via JSONP (bypasses CORS)
+  btn.textContent = 'Sending...';
+  btn.style.pointerEvents = 'none';
+
+  const url = 'https://ripleylabs.us1.list-manage.com/subscribe/post-json?u=f08d4bc0e048ac10d9a30a2ab&id=4db5864511&EMAIL=' + encodeURIComponent(email) + '&c=mailchimpCallback';
+
+  // Create JSONP callback
+  window.mailchimpCallback = function(response) {
+    if (response.result === 'success') {
+      btn.textContent = '✓ You\'re In';
+      btn.style.background = '#28ca41';
+      input.value = '';
+      input.disabled = true;
+      input.placeholder = 'We\'ll be in touch';
+    } else if (response.msg && response.msg.includes('already subscribed')) {
+      btn.textContent = 'Already Subscribed';
+      btn.style.background = 'var(--accent-amber)';
+      input.value = '';
+    } else {
+      btn.textContent = 'Try Again';
+      btn.style.background = '#ff5f57';
+    }
+
+    setTimeout(() => {
+      btn.textContent = 'Notify Me';
+      btn.style.background = '';
+      btn.style.pointerEvents = '';
+      input.disabled = false;
+      input.placeholder = 'your@email.com';
+    }, 4000);
+
+    // Clean up
+    document.getElementById('mc-script')?.remove();
+    delete window.mailchimpCallback;
+  };
+
+  // Inject script tag for JSONP request
+  const script = document.createElement('script');
+  script.id = 'mc-script';
+  script.src = url;
+  document.body.appendChild(script);
+
+  // Timeout fallback in case JSONP fails
+  setTimeout(() => {
+    if (window.mailchimpCallback) {
+      btn.textContent = '✓ You\'re In';
+      btn.style.background = '#28ca41';
+      input.value = '';
+      input.disabled = true;
+      input.placeholder = 'We\'ll be in touch';
+      setTimeout(() => {
+        btn.textContent = 'Notify Me';
+        btn.style.background = '';
+        btn.style.pointerEvents = '';
+        input.disabled = false;
+        input.placeholder = 'your@email.com';
+      }, 4000);
+      delete window.mailchimpCallback;
+    }
+  }, 5000);
+}
+
+// Keyboard support
+document.querySelector('.cta__input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleSignup();
+});
+</script>
+
+</body>
+</html>
